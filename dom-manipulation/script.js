@@ -93,6 +93,87 @@ function importFromJsonFile(event) {
     };
     fileReader.readAsText(event.target.files[0]);
 }
+function populateCategories() {
+    const categoryFilter = document.getElementById("categoryFilter");
+    const uniqueCategories = [...new Set(quotes.map(quote => quote.category))];
+    
+    uniqueCategories.forEach(category => {
+        const option = document.createElement("option");
+        option.value = category;
+        option.textContent = category;
+        categoryFilter.appendChild(option);
+    });
+}
+function filterQuotes() {
+    const categoryFilter = document.getElementById("categoryFilter");
+    const selectedCategory = categoryFilter.value;
+    const quoteDisplay = document.getElementById("quoteDisplay");
+    quoteDisplay.innerHTML = ""; // Clear previous content
+
+    if (selectedCategory === "all") {
+        quotes.forEach(quote => {
+            const quoteText = document.createElement("p");
+            quoteText.textContent = `"${quote.text}"`;
+            
+            const quoteCategory = document.createElement("p");
+            quoteCategory.innerHTML = `<strong>Category:</strong> ${quote.category}`;
+            
+            quoteDisplay.appendChild(quoteText);
+            quoteDisplay.appendChild(quoteCategory);
+        });
+    } else {
+        const filteredQuotes = quotes.filter(quote => quote.category === selectedCategory);
+        filteredQuotes.forEach(quote => {
+            const quoteText = document.createElement("p");
+            quoteText.textContent = `"${quote.text}"`;
+            
+            const quoteCategory = document.createElement("p");
+            quoteCategory.innerHTML = `<strong>Category:</strong> ${quote.category}`;
+            
+            quoteDisplay.appendChild(quoteText);
+            quoteDisplay.appendChild(quoteCategory);
+        });
+    }
+
+    // Save the last selected filter to local storage
+    localStorage.setItem('lastSelectedFilter', selectedCategory);
+}
+function loadQuotes() {
+    const storedQuotes = localStorage.getItem('quotes');
+    if (storedQuotes) {
+        quotes = JSON.parse(storedQuotes);
+    } else {
+        // Default quotes if none are found in local storage
+        quotes = [
+            // ... existing default quotes ...
+        ];
+    }
+
+    populateCategories();
+    const lastSelectedFilter = localStorage.getItem('lastSelectedFilter');
+    if (lastSelectedFilter) {
+        const categoryFilter = document.getElementById("categoryFilter");
+        categoryFilter.value = lastSelectedFilter;
+        filterQuotes();
+    }
+}
+function createAddQuoteForm() {
+    const newQuoteText = document.getElementById("newQuoteText").value;
+    const newQuoteCategory = document.getElementById("newQuoteCategory").value;
+
+    if (newQuoteText && newQuoteCategory) {
+        quotes.push({ text: newQuoteText, category: newQuoteCategory });
+        saveQuotes(); // Save updated quotes to local storage
+        populateCategories(); // Update categories in dropdown
+
+        document.getElementById("newQuoteText").value = "";
+        document.getElementById("newQuoteCategory").value = "";
+
+        alert("Quote added successfully!");
+    } else {
+        alert("Please fill in both fields.");
+    }
+}
 
 // Event listeners
 document.getElementById("newQuote").addEventListener("click", showRandomQuote);
