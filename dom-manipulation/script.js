@@ -74,9 +74,11 @@ function createAddQuoteForm() {
     const newQuoteCategory = document.getElementById("newQuoteCategory").value;
 
     if (newQuoteText && newQuoteCategory) {
-        quotes.push({ text: newQuoteText, category: newQuoteCategory });
+        const newQuote = { text: newQuoteText, category: newQuoteCategory };
+        quotes.push(newQuote);
         saveQuotes();
         populateCategories();
+        postQuoteToServer(newQuote); // Sync new quote to server
 
         document.getElementById("newQuoteText").value = "";
         document.getElementById("newQuoteCategory").value = "";
@@ -105,7 +107,7 @@ function importFromJsonFile(event) {
     const fileReader = new FileReader();
     fileReader.onload = function(event) {
         const importedQuotes = JSON.parse(event.target.result);
-        quotes.push(...importedQuotes);
+        quotes.push(...import edQuotes);
         saveQuotes();
         populateCategories();
         alert('Quotes imported successfully!');
@@ -117,7 +119,8 @@ function importFromJsonFile(event) {
 function filterQuotes() {
     const selectedCategory = document.getElementById("categoryFilter").value;
     const quoteDisplay = document.getElementById("quoteDisplay");
-    quoteDisplay.innerHTML="";
+    quoteDisplay.innerHTML = "";
+
     if (selectedCategory === "all") {
         quotes.forEach(quote => {
             const quoteText = document.createElement("p");
@@ -175,8 +178,8 @@ async function postQuoteToServer(quote) {
     }
 }
 
-// Sync data with the server
-async function syncDataWithServer() {
+// Sync quotes with the server
+async function syncQuotes() {
     const serverQuotes = await fetchQuotesFromServer();
     
     // Check for new quotes and update local storage
@@ -187,25 +190,19 @@ async function syncDataWithServer() {
         }
     });
 
-    checkForConflicts(); // Check for conflicts after syncing
+    // Check for updated quotes and update local storage
+    quotes.forEach(localQuote => {
+        const serverQuote = serverQuotes.find(q => q.text === localQuote.text);
+        if (serverQuote && serverQuote.category !== localQuote.category) {
+            localQuote.category = serverQuote.category;
+        }
+    });
+
     saveQuotes();
     populateCategories();
 }
 
-// Check for conflicts
-function checkForConflicts() {
-    // Compare local quotes with server quotes
-    // This is a simple example; you can implement a more complex logic as needed
-    quotes.forEach(localQuote => {
-        const serverQuote = serverQuotes.find(q => q.text === localQuote.text);
-        if (serverQuote && serverQuote.category !== localQuote.category) {
-            alert(`Conflict detected for quote: "${localQuote.text}". Server version has category "${serverQuote.category}".`);
-            // Optionally, provide options to resolve the conflict
-        }
-    });
-}
-
-// Set an interval to sync data every 10 seconds
-setInterval(syncDataWithServer, 10000);
+// Set an interval to sync quotes every 10 seconds
+setInterval(syncQuotes, 10000);
 
 loadQuotes();
